@@ -1,19 +1,26 @@
-import { useState, useEffect } from 'react'
-export default function App(){
+import { useState, useEffect, useContext } from 'react'
+import { BrowserRouter, Routes, Route, Link, useNavigate } from "react-router-dom"
+import { CartContext, CartProvider } from "./contexts/CartContext"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import Checkout from "./pages/Checkout"
+import NotFound from "./pages/NotFound"
+
+function AppInterno(){
 const verde='#39FF14'
 const [busca,setBusca]=useState('')
 const [cat,setCat]=useState('TODOS')
-const [cart,setCart]=useState([])
+const {cart,setCart}=useContext(CartContext)
 const [openCart,setOpenCart]=useState(false)
 const [slide,setSlide]=useState(0)
-const [pagina,setPagina]=useState('Inicio')
 const [paginaLoja,setPaginaLoja]=useState(1)
 const BASE=import.meta.env.BASE_URL
+const navigate = useNavigate()
 
 const banners = [
-{ titulo: "JOGUE GRANDE. CONSTRUA GRANDE.", sub: "Brinquedos, blocos, pelúcias, jogos de tabuleiro e muito mais.", img: `${import.meta.env.BASE_URL}banner1.jpg.JPG` },
-{ titulo: "OFERTAS IMPERDÍVEIS!", sub: "Até 50% OFF essa semana com super desconto.", img: `${import.meta.env.BASE_URL}banner2.jpg.JPG` },
-{ titulo: "NOVIDADES QUE CHEGARAM!", sub: "Lançamentos LEGO, Hot Wheels e Barbie.", img: `${import.meta.env.BASE_URL}banner3.jpg.JPG` },
+{ titulo: "JOGUE GRANDE. CONSTRUA GRANDE.", sub: "Brinquedos, blocos, pelúcias, jogos de tabuleiro e muito mais.", img: `${BASE}banner1.jpg.JPG` },
+{ titulo: "OFERTAS IMPERDÍVEIS!", sub: "Até 50% OFF essa semana com super desconto.", img: `${BASE}banner2.jpg.JPG` },
+{ titulo: "NOVIDADES QUE CHEGARAM!", sub: "Lançamentos LEGO, Hot Wheels e Barbie.", img: `${BASE}banner3.jpg.JPG` },
 ]
 
 useEffect(()=>{ const t=setInterval(()=>setSlide(s=>(s+1)%3),4000); return()=>clearInterval(t) },[])
@@ -42,15 +49,17 @@ const inicioLoja=(paginaLoja-1)*porPagina
 const listaLoja=itensLoja.slice(inicioLoja,inicioLoja+porPagina)
 const listaNovidades=[...produtos].sort((a,b)=>b.id-a.id).slice(0,20)
 const listaOfertas=produtos.filter(p=>p.tag==='OFERTA'||p.tag==='25% OFF').slice(0,24)
-function add(p){setCart(o=>{const ex=o.find(x=>x.id===p.id);if(ex)return o.map(x=>x.id===p.id?{...x,qtd:x.qtd+1}:x);return[...o,{...p,qtd:1}]});setOpenCart(true)}
+
+function add(p){setCart(o=>{const ex=o.find(x=>x.id===p.id);if(ex)return o.map(x=>x.id===p.id?{...x,qtd:x.qtd+1}:x);return[...o,{...p,qtd:1}]});setOpenCart(true); toast.success(p.nome+" adicionado!")}
 function inc(id){setCart(o=>o.map(i=>i.id===id?{...i,qtd:i.qtd+1}:i))}
 function dec(id){setCart(o=>o.map(i=>i.id===id?{...i,qtd:i.qtd-1}:i).filter(i=>i.qtd>0))}
-function removeItem(id){setCart(o=>o.filter(i=>i.id!==id))}
+function removeItem(id){setCart(o=>o.filter(i=>i.id!==id)); toast.error("Item removido")}
 const qtd=cart.reduce((s,i)=>s+i.qtd,0)
 const subtotal=cart.reduce((s,i)=>s+i.preco*i.qtd,0)
 const frete=subtotal>200||subtotal===0?0:19.90
 const total=subtotal+frete
 const categorias=[{nome:'Bonecos',icon:'🤖'},{nome:'Blocos de Montar',icon:'🧱'},{nome:'Carrinhos',icon:'🏎️'},{nome:'Jogos de Tabuleiro',icon:'🎲'},{nome:'Pelúcias',icon:'🧸'},{nome:'Educativos',icon:'🧠'}]
+
 const Card=({p})=>(
 <div style={{border:'1px solid #1e3a1e',borderRadius:'12px',background:'#0a0a0a',overflow:'hidden',position:'relative'}}>
 <div style={{position:'absolute',top:'8px',left:'8px',background:verde,color:'black',fontSize:'9px',fontWeight:900,padding:'3px 7px',borderRadius:'5px',zIndex:2}}>{p.tag}</div>
@@ -63,26 +72,33 @@ const Card=({p})=>(
 </div>
 </div>
 )
+
 return(
 <div style={{background:'#050505',minHeight:'100vh',color:'white',fontFamily:'Arial'}}>
 <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'20px 32px 12px 32px',position:'sticky',top:0,zIndex:100,background:'#050505'}}>
-<div style={{color:verde,fontWeight:900,fontSize:'42px',lineHeight:'0.8',cursor:'pointer'}} onClick={()=>setPagina('Inicio')}>MEGA<br/>TOYS</div>
-<div style={{display:'flex',gap:'32px',fontSize:'18px',fontWeight:700}}>
-{['Inicio','Loja','Novidades','Ofertas','Sobre'].map(m=>(
-<span key={m} onClick={()=>{setPagina(m);setPaginaLoja(1);window.scrollTo(0,0)}} style={{cursor:'pointer',color:pagina===m?verde:'#777',borderBottom:pagina===m?'3px solid '+verde:'none',paddingBottom:'4px'}}>{m}</span>
-))}
+<div style={{color:verde,fontWeight:900,fontSize:'42px',lineHeight:'0.8',cursor:'pointer'}} onClick={()=>navigate('/')}>MEGA<br/>TOYS</div>
+<div style={{display:'flex',gap:'24px',fontSize:'16px',fontWeight:700}}>
+<Link to="/" style={{color:verde,textDecoration:'none'}}>Inicio</Link>
+<Link to="/loja" style={{color:'#777',textDecoration:'none'}}>Loja</Link>
+<Link to="/novidades" style={{color:'#777',textDecoration:'none'}}>Novidades</Link>
+<Link to="/ofertas" style={{color:'#777',textDecoration:'none'}}>Ofertas</Link>
+<Link to="/sobre" style={{color:'#777',textDecoration:'none'}}>Sobre</Link>
+<Link to="/checkout" style={{color:'#777',textDecoration:'none'}}>Checkout</Link>
 </div>
 <div style={{color:verde,fontSize:'26px',display:'flex',gap:'18px'}}>
 <span onClick={()=>setOpenCart(true)} style={{position:'relative',cursor:'pointer'}}>🛒<sup style={{background:verde,color:'black',borderRadius:'50%',padding:'2px 7px',fontSize:'12px',fontWeight:900}}>{qtd}</sup></span>
 </div>
 </header>
+
 <div style={{display:'flex',justifyContent:'center',marginBottom:'12px'}}>
 <div style={{width:'680px',border:'1.8px solid '+verde,borderRadius:'24px',padding:'12px 18px',display:'flex',gap:'10px',background:'#0a0a0a'}}>
 <span style={{color:verde}}>🔍</span>
-<input value={busca} onChange={e=>{setBusca(e.target.value);if(e.target.value)setPagina('Loja')}} placeholder='Buscar brinquedos...' style={{flex:1,background:'transparent',border:'none',outline:'none',color:'white',fontSize:'14px'}}/>
+<input value={busca} onChange={e=>{setBusca(e.target.value);if(e.target.value) navigate('/loja')}} placeholder='Buscar brinquedos...' style={{flex:1,background:'transparent',border:'none',outline:'none',color:'white',fontSize:'14px'}}/>
 </div>
 </div>
-{pagina==='Inicio'&&(
+
+<Routes>
+<Route path="/" element={
 <>
 <div style={{margin:'0 28px',borderRadius:'12px',overflow:'hidden',height:'220px',position:'relative',background:'#000',border:'1px solid #1a3a1a'}}>
 {banners.map((b,i)=>(
@@ -100,7 +116,7 @@ return(
 <div style={{fontWeight:900}}>Categorias<div style={{width:'30px',height:'3px',background:verde,marginTop:'4px'}}></div></div>
 <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'10px',marginTop:'10px'}}>
 {categorias.map(c=>(
-<div key={c.nome} onClick={()=>{setCat(c.nome===cat?'TODOS':c.nome);setPagina('Loja')}} style={{border:'1.5px solid '+verde,background:'#0a0a0a',borderRadius:'12px',padding:'16px 6px',textAlign:'center',cursor:'pointer'}}>
+<div key={c.nome} onClick={()=>{setCat(c.nome===cat?'TODOS':c.nome);navigate('/loja')}} style={{border:'1.5px solid '+verde,background:'#0a0a0a',borderRadius:'12px',padding:'16px 6px',textAlign:'center',cursor:'pointer'}}>
 <div style={{fontSize:'28px'}}>{c.icon}</div>
 <div style={{fontSize:'11px',fontWeight:700,marginTop:'8px'}}>{c.nome}</div>
 </div>
@@ -114,8 +130,8 @@ return(
 </div>
 </div>
 </>
-)}
-{pagina==='Loja'&&(
+}/>
+<Route path="/loja" element={
 <div style={{padding:'16px 28px 20px'}}>
 <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px',marginTop:'16px'}}>
 {listaLoja.map(p=><Card key={p.id} p={p}/>)}
@@ -128,23 +144,10 @@ return(
 <button disabled={paginaLoja===totalPagLoja} onClick={()=>setPaginaLoja(p=>p+1)} style={{padding:'8px 14px',borderRadius:'8px',border:'1px solid '+verde,background:paginaLoja===totalPagLoja?'#222':'transparent',color:verde,cursor:'pointer'}}>Proxima</button>
 </div>
 </div>
-)}
-{pagina==='Novidades'&&(
-<div style={{padding:'16px 28px 20px'}}>
-<div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px',marginTop:'16px'}}>
-{listaNovidades.map(p=><Card key={p.id} p={p}/>)}
-</div>
-</div>
-)}
-{pagina==='Ofertas'&&(
-<div style={{padding:'16px 28px 20px'}}>
-<div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px',marginTop:'16px'}}>
-{listaOfertas.map(p=><Card key={p.id} p={p}/>)}
-</div>
-</div>
-)}
-
-{pagina==="Sobre" && (
+}/>
+<Route path="/novidades" element={<div style={{padding:'16px 28px 20px'}}><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px',marginTop:'16px'}}>{listaNovidades.map(p=><Card key={p.id} p={p}/>)}</div></div>} />
+<Route path="/ofertas" element={<div style={{padding:'16px 28px 20px'}}><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px',marginTop:'16px'}}>{listaOfertas.map(p=><Card key={p.id} p={p}/>)}</div></div>} />
+<Route path="/sobre" element={
 <div style={{padding:"24px 28px", maxWidth:"1100px", margin:"0 auto"}}>
 <div style={{border:"2px solid "+verde, borderRadius:"16px", padding:"28px", background:"#0a0a0a"}}>
 <div style={{color:verde, fontWeight:900, fontSize:"42px", lineHeight:"0.9"}}>MEGA<br/>TOYS</div>
@@ -169,58 +172,27 @@ return(
 <p>WhatsApp: (21) 99999-9999<br/>E-mail: contato@megatoys.com.br<br/>Instagram: @megatoysbrasil</p>
 </div>
 <div style={{marginTop:"22px", display:"flex", gap:"12px"}}>
-<button onClick={()=>setPagina("Loja")} style={{background:verde, color:"black", border:"none", padding:"12px 24px", borderRadius:"10px", fontWeight:900, cursor:"pointer"}}>IR PARA LOJA</button>
-<button onClick={()=>setPagina("Ofertas")} style={{background:"transparent", border:"1px solid "+verde, color:verde, padding:"12px 24px", borderRadius:"10px", fontWeight:900, cursor:"pointer"}}>VER OFERTAS</button>
+<button onClick={()=>navigate("/loja")} style={{background:verde, color:"black", border:"none", padding:"12px 24px", borderRadius:"10px", fontWeight:900, cursor:"pointer"}}>IR PARA LOJA</button>
+<button onClick={()=>navigate("/ofertas")} style={{background:"transparent", border:"1px solid "+verde, color:verde, padding:"12px 24px", borderRadius:"10px", fontWeight:900, cursor:"pointer"}}>VER OFERTAS</button>
 </div>
 </div>
 </div>
-)}
+}/>
+<Route path="/checkout" element={<Checkout cart={cart} total={total} setCart={setCart} />} />
+<Route path="*" element={<NotFound/>} />
+</Routes>
+
 <footer style={{background:"#0a0a0a", borderTop:"2px solid "+verde, padding:"32px 28px 16px", marginTop:"30px"}}>
 <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"20px"}}>
 <div>
 <div style={{color:verde, fontWeight:900, fontSize:"28px", lineHeight:"0.9"}}>MEGA<br/>TOYS</div>
 <p style={{color:"#888", fontSize:"11px", marginTop:"10px", lineHeight:"1.5"}}>A maior loja de brinquedos online do Brasil. diversos produtos, 6 categorias, entrega para todo Brasil.</p>
-<div style={{display:"flex", gap:"10px", marginTop:"12px", fontSize:"20px"}}>
-<span>📷</span><span>📘</span><span>🎵</span><span>💬</span>
+</div><div><b style={{color:verde, fontSize:"13px"}}>INSTITUCIONAL</b><div style={{color:"#888", fontSize:"11px", marginTop:"8px", lineHeight:"2"}}><div onClick={()=>navigate("/sobre")} style={{cursor:"pointer"}}>Sobre a MegaToys</div><div>Nossa Loja Física</div><div>Trabalhe Conosco</div><div>Política de Privacidade</div></div></div>
+<div><b style={{color:verde, fontSize:"13px"}}>CATEGORIAS</b><div style={{color:"#888", fontSize:"11px", marginTop:"8px", lineHeight:"2"}}>{categorias.map(c=><div key={c.nome} onClick={()=>{setCat(c.nome); navigate("/loja")}} style={{cursor:"pointer"}}>{c.nome}</div>)}</div></div>
+<div><b style={{color:verde, fontSize:"13px"}}>ATENDIMENTO</b><div style={{color:"#888", fontSize:"11px", marginTop:"8px"}}><div>📞 (11) 99999-9999</div><div>✉️ contato@megatoys.com.br</div><div style={{marginTop:"8px", color:verde, fontWeight:900}}>FRETE GRÁTIS acima de R$ 200</div></div></div>
 </div>
-</div>
-<div>
-<b style={{color:verde, fontSize:"13px"}}>INSTITUCIONAL</b>
-<div style={{color:"#888", fontSize:"11px", marginTop:"8px", lineHeight:"2"}}>
-<div onClick={()=>setPagina("Sobre")} style={{cursor:"pointer"}}>Sobre a MegaToys</div>
-<div>Nossa Loja Física</div>
-<div>Trabalhe Conosco</div>
-<div>Política de Privacidade</div>
-<div>Trocas e Devoluções</div>
-</div>
-</div>
-<div>
-<b style={{color:verde, fontSize:"13px"}}>CATEGORIAS</b>
-<div style={{color:"#888", fontSize:"11px", marginTop:"8px", lineHeight:"2"}}>
-{categorias.map(c=>(
-<div key={c.nome} onClick={()=>{setCat(c.nome); setPagina("Loja")}} style={{cursor:"pointer"}}>{c.nome}</div>
-))}
-</div>
-</div>
-<div>
-<b style={{color:verde, fontSize:"13px"}}>ATENDIMENTO</b>
-<div style={{color:"#888", fontSize:"11px", marginTop:"8px", lineHeight:"1.8"}}>
-<div>📞 (11) 99999-9999</div>
-<div>✉️ contato@megatoys.com.br</div>
-<div>🕘 Seg a Sáb 9h às 19h</div>
-<div style={{marginTop:"8px", color:verde, fontWeight:900}}>FRETE GRÁTIS acima de R$ 200</div>
-<div style={{marginTop:"4px"}}>💳 12x sem juros no cartão</div>
-</div>
-</div>
-</div>
-<div style={{borderTop:"1px solid #222", marginTop:"20px", paddingTop:"12px", textAlign:"center", fontSize:"10px", color:"#666"}}>
-MegaToys © 2026 - Todos os direitos reservados • CNPJ: 12.345.678/0001-99 • Rua dos Brinquedos, 123 - Rio de Janeiro/RJ<br/>
-Site 100% seguro • Produtos originais • Entrega garantida
-</div>
-</footer>
-
-
-{openCart&&(
+<div style={{borderTop:"1px solid #222", marginTop:"20px", paddingTop:"12px", textAlign:"center", fontSize:"10px", color:"#666"}}>MegaToys © 2026 - Todos os direitos reservados</div>
+</footer>{openCart&&(
 <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:999,display:'flex',justifyContent:'flex-end'}} onClick={()=>setOpenCart(false)}>
 <div style={{width:'400px',background:'#111',borderLeft:'3px solid '+verde,padding:'16px',overflow:'auto',height:'100vh'}} onClick={e=>e.stopPropagation()}>
 <div style={{display:'flex',justifyContent:'space-between',borderBottom:'1px solid #1e3a1e',paddingBottom:'10px'}}>
@@ -251,12 +223,23 @@ Site 100% seguro • Produtos originais • Entrega garantida
 <div style={{display:'flex',justifyContent:'space-between'}}><span>Frete:</span><span style={{color:frete===0?verde:'#fff'}}>{frete===0?'GRATIS':'R$ '+frete.toFixed(2).replace('.',',')}</span></div>
 <div style={{display:'flex',justifyContent:'space-between',fontWeight:900,fontSize:'14px',marginTop:'6px',color:verde}}><span>Total:</span><span>R$ {total.toFixed(2).replace('.',',')}</span></div>
 </div>
-<button onClick={()=>{alert('Compra finalizada! Total R$ '+total.toFixed(2).replace('.',','));setCart([]);setOpenCart(false)}} style={{width:'100%',background:verde,color:'black',border:'none',padding:'14px',borderRadius:'10px',fontWeight:900,marginTop:'14px',cursor:'pointer'}}>FINALIZAR - R$ {total.toFixed(2).replace('.',',')}</button>
+<button onClick={()=>navigate('/checkout')} style={{width:'100%',background:verde,color:'black',border:'none',padding:'14px',borderRadius:'10px',fontWeight:900,marginTop:'14px',cursor:'pointer'}}>IR PARA CHECKOUT - R$ {total.toFixed(2).replace('.',',')}</button>
 </>
 }
 </div>
 </div>
 )}
 </div>
+)
+}
+
+export default function App(){
+return (
+<CartProvider>
+<BrowserRouter>
+<AppInterno/>
+<ToastContainer theme="dark" />
+</BrowserRouter>
+</CartProvider>
 )
 }
